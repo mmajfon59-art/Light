@@ -2,7 +2,8 @@ name: Check Outage Schedule
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    # Запуск каждый день в 04:00 по UTC (что соответствует 06:00 утра по Киеву)
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
