@@ -5,8 +5,10 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 TOKEN = os.getenv("BOT_TOKEN", "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI")
-CHAT_ID = os.getenv("CHAT_ID", "8613036126")
 
+# Указываем список ID получателей через запятую (в виде чисел или строк)
+# Например: ["123456789", "987654321", "112233445"]
+CHAT_IDS = ["8613036126", "1941981584"]
 
 URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-4-2"
 
@@ -64,20 +66,23 @@ def check_schedule():
         message += f"\n📅 <b>Дата: {date_str}</b>"
         message += "\n\n" + "\n".join(result_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
-        send_telegram(message)
+        
+        # Запускаем рассылку по всем ID из списка
+        send_telegram_to_all(message)
     else:
         print("Не удалось найти интервалы расписания.")
 
-def send_telegram(text):
+def send_telegram_to_all(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True
-    }
-    res = requests.post(url, json=payload)
-    print("Статус отправки:", res.status_code, res.text)
+    for chat_id in CHAT_IDS:
+        payload = {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        res = requests.post(url, json=payload)
+        print(f"Отправка для {chat_id}: статус {res.status_code}")
 
 if __name__ == "__main__":
     check_schedule()
