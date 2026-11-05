@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import re
 
 TOKEN = "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI"
-CHAT_ID = "9257801183"
+CHAT_ID = "757987493"
 URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-4-2"
 
 def send_telegram_message(text):
