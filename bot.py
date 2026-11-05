@@ -20,53 +20,47 @@ def check_schedule():
         return
 
     soup = BeautifulSoup(response.text, "html.parser")
-    result_lines = []
+    outage_lines = []
     
-    # Регулярное выражение для поиска времени (например, 00:00 - 02:30 или 00:00 – 02:30)
     time_pattern = re.compile(r'(\d{2}:\d{2})\s*[\-–—]\s*(\d{2}:\d{2})')
 
-    # Ищем элементы, которые похожи на строки расписания
     for element in soup.find_all(['div', 'li', 'span', 'p']):
         text = element.get_text(" ", strip=True)
         match = time_pattern.search(text)
         
-        # Проверяем, что строка короткая и содержит именно временной интервал
         if match and len(text) < 30:
             interval = f"{match.group(1)} - {match.group(2)}"
             
-            # Анализируем классы и содержимое элемента на предмет статуса отключения
             elem_str = str(element).lower()
             parent_str = str(element.parent).lower() if element.parent else ""
             combined = elem_str + " " + parent_str
             
-            # На сайте bezsvitla отключения отмечены красными элементами или классами off/red/danger
-            # Свет — зелеными или on/success
+            # Определяем статус отключения
+            is_outage = False
             if any(k in combined for k in ["off", "red", "danger", "no-light", "disable", "outage"]):
-                icon = "❌"
-            elif any(k in combined for k in ["on", "success", "green", "has-light", "active"]):
-                icon = "💡"
+                is_outage = True
+            elif "rgb(40" in combined or "fill=\"#28" in combined or "green" in combined:
+                is_outage = False
             else:
-                # Дополнительная проверка по графическим индикаторам внутри строки
-                if "rgb(40" in combined or "fill=\"#28" in combined or "green" in combined:
-                    icon = "💡"
-                else:
-                    # Если явного указания нет, проверяем по сопутствующему тексту
-                    if "вимк" in combined or "нема" in combined or "off" in combined:
-                        icon = "❌"
-                    else:
-                        icon = "💡"
+                if "вимк" in combined or "нема" in combined or "off" in combined:
+                    is_outage = True
 
-            line = f"{icon} {interval}"
-            if line not in result_lines and not any(interval in existing for existing in result_lines):
-                result_lines.append(line)
+            # Добавляем в список ТОЛЬКО если это отключение света
+            if is_outage:
+                line = f"❌ {interval}"
+                if line not in outage_lines and not any(interval in existing for existing in outage_lines):
+                    outage_lines.append(line)
 
-    if result_lines:
-        message = "⚡ <b>АКТУАЛЬНИЙ ГРАФІК (Черга 4.2)</b>\n\n"
-        message += "\n".join(result_lines)
+    if outage_lines:
+        message = "⚡ <b>ГОДИНИ ВІДКЛЮЧЕННЯ (Черга 4.2)</b>\n\n"
+        message += "\n".join(outage_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
         send_telegram(message)
     else:
-        print("Не удалось найти интервалы расписания.")
+        # Если отключений нет, сообщаем об этом
+        message = "⚡ <b>Графік для Черги 4.2:</b>\n\n💡 Наразі відключень за цією чергою немає!"
+        message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
+        send_telegram(message)
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
