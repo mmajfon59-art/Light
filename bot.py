@@ -19,30 +19,34 @@ def check_schedule():
         return
 
     soup = BeautifulSoup(response.text, "html.parser")
-    
     result_lines = []
     
-    # Регулярное выражение для поиска интервалов времени (например, 00:00 - 02:30)
+    # Ищем все блоки, которые похожи на строки расписания (содержат время вида ЧЧ:ММ - ЧЧ:ММ)
     time_pattern = re.compile(r'\d{2}:\d{2}\s*[\-–—]\s*\d{2}:\d{2}')
 
-    # Находим все теги, содержащие время
     for element in soup.find_all(True):
         text = element.get_text(strip=True)
         match = time_pattern.search(text)
         
-        # Если элемент содержит только интервал времени (без лишнего длинного текста)
-        if match and len(text) < 25:
+        if match and len(text) < 30:
             interval = match.group(0).replace("–", "-").replace("—", "-")
             
-            # Анализируем HTML-разметку элемента и его родителей
-            html_chunk = str(element) + str(element.parent)
-            html_chunk_lower = html_chunk.lower()
+            # Ищем родительский контейнер строки, чтобы проверить наличие класса/индикатора цвета
+            container = element.find_parent(['div', 'li', 'tr'])
+            container_html = str(container).lower() if container else str(element).lower()
             
-            # Проверяем на наличие иконки выключения / красного цвета
-            if any(k in html_chunk_lower for k in ["off", "red", "danger", "no-light", "без", "light-off", "0.5"]):
+            # На сайте bezsvitla активный свет (есть) обычно имеет зеленый цвет или класс on/has-light/success
+            # Отключение (нет света) — red/off/danger/disable
+            if any(k in container_html for k in ["off", "red", "danger", "no-light", "disable", "outage"]):
                 icon = "❌"
-            else:
+            elif any(k in container_html for k in ["on", "success", "green", "has-light", "active"]):
                 icon = "💡"
+            else:
+                # Если явного класса нет, проверяем по наличию SVG/иконок внутри
+                if "rgb(40" in container_html or "#28" in container_html or "green" in container_html:
+                    icon = "💡"
+                else:
+                    icon = "❌" # по умолчанию для неактивных интервалов
             
             line = f"{icon} {interval}"
             if line not in result_lines and not any(interval in existing for existing in result_lines):
@@ -52,17 +56,17 @@ def check_schedule():
         message = "⚡ <b>АКТУАЛЬНИЙ ГРАФІК (Черга 4.2)</b>\n\n"
         message += "\n".join(result_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
-        
         send_telegram(message)
     else:
-        print("ОШИБКА: Не удалось собрать строки интервалов.")
+        print("Не удалось найти интервалы.")
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
         "chat_id": CHAT_ID,
         "text": text,
-        "parse_mode": "HTML"
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True  # убирает большое превью сайта с картинкой-молнией
     }
     res = requests.post(url, json=payload)
     print("Статус отправки в Telegram:", res.status_code, res.text)
