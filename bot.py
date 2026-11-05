@@ -20,7 +20,7 @@ def check_schedule():
         return
 
     soup = BeautifulSoup(response.text, "html.parser")
-    outage_lines = []
+    result_lines = []
     
     time_pattern = re.compile(r'(\d{2}:\d{2})\s*[\-–—]\s*(\d{2}:\d{2})')
 
@@ -35,32 +35,28 @@ def check_schedule():
             parent_str = str(element.parent).lower() if element.parent else ""
             combined = elem_str + " " + parent_str
             
-            # Определяем статус отключения
-            is_outage = False
+            # Определяем статус отключения или наличия света
             if any(k in combined for k in ["off", "red", "danger", "no-light", "disable", "outage"]):
-                is_outage = True
-            elif "rgb(40" in combined or "fill=\"#28" in combined or "green" in combined:
-                is_outage = False
+                status_text = "немає світла"
+            elif any(k in combined for k in ["on", "success", "green", "has-light", "active"]) or "rgb(40" in combined:
+                status_text = "є світло"
             else:
                 if "вимк" in combined or "нема" in combined or "off" in combined:
-                    is_outage = True
+                    status_text = "немає світла"
+                else:
+                    status_text = "є світло"
 
-            # Добавляем в список ТОЛЬКО если это отключение света
-            if is_outage:
-                line = f"❌ {interval}"
-                if line not in outage_lines and not any(interval in existing for existing in outage_lines):
-                    outage_lines.append(line)
+            line = f"{interval} — {status_text}"
+            if line not in result_lines and not any(interval in existing for existing in result_lines):
+                result_lines.append(line)
 
-    if outage_lines:
-        message = "⚡ <b>ГОДИНИ ВІДКЛЮЧЕННЯ (Черга 4.2)</b>\n\n"
-        message += "\n".join(outage_lines)
+    if result_lines:
+        message = "⚡ <b>ГРАФІК СВІТЛА (Черга 4.2)</b>\n\n"
+        message += "\n".join(result_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
         send_telegram(message)
     else:
-        # Если отключений нет, сообщаем об этом
-        message = "⚡ <b>Графік для Черги 4.2:</b>\n\n💡 Наразі відключень за цією чергою немає!"
-        message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
-        send_telegram(message)
+        print("Не удалось найти интервалы расписания.")
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
