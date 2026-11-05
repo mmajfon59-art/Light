@@ -31,22 +31,26 @@ def check_schedule():
         if match and len(text) < 30:
             interval = f"{match.group(1)} - {match.group(2)}"
             
-            elem_str = str(element).lower()
-            parent_str = str(element.parent).lower() if element.parent else ""
-            combined = elem_str + " " + parent_str
+            # Проверяем структуру контейнера строки графика
+            container = element.find_parent(['div', 'li', 'tr'])
+            container_html = str(container).lower() if container else str(element).lower()
             
-            # Определяем статус отключения или наличия света
-            if any(k in combined for k in ["off", "red", "danger", "no-light", "disable", "outage"]):
-                status_text = "немає світла"
-            elif any(k in combined for k in ["on", "success", "green", "has-light", "active"]) or "rgb(40" in combined:
-                status_text = "є світло"
+            # Ищем маркеры света (зеленый цвет, класс on, success или наличие лампочки)
+            is_light = False
+            if any(k in container_html for k in ["on", "success", "green", "has-light", "active", "rgb(40", "#28"]):
+                is_light = True
+            elif any(k in container_html for k in ["off", "red", "danger", "no-light", "disable", "outage", "rgb(217", "#e"]):
+                is_light = False
             else:
-                if "вимк" in combined or "нема" in combined or "off" in combined:
-                    status_text = "немає світла"
+                # Если явных классов нет, по умолчанию считаем по наличию текста отключения
+                if "вимк" in container_html or "нема" in container_html:
+                    is_light = False
                 else:
-                    status_text = "є світло"
+                    is_light = True  # Если сомнения — считаем, что свет есть, пока не доказано обратное
 
+            status_text = "є світло" if is_light else "немає світла"
             line = f"{interval} — {status_text}"
+            
             if line not in result_lines and not any(interval in existing for existing in result_lines):
                 result_lines.append(line)
 
