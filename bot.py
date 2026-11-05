@@ -2,6 +2,7 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 TOKEN = os.getenv("BOT_TOKEN", "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI")
 CHAT_ID = os.getenv("CHAT_ID", "8613036126")
@@ -13,6 +14,15 @@ headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+def get_current_date_ukr():
+    months = {
+        1: "січня", 2: "лютого", 3: "березня", 4: "квітня",
+        5: "травня", 6: "червня", 7: "липня", 8: "серпня",
+        9: "вересня", 10: "жовтня", 11: "листопада", 12: "грудня"
+    }
+    now = datetime.now()
+    return f"{now.day} {months[now.month]}"
+
 def check_schedule():
     response = requests.get(URL, headers=headers)
     if response.status_code != 200:
@@ -22,18 +32,6 @@ def check_schedule():
     soup = BeautifulSoup(response.text, "html.parser")
     result_lines = []
     
-    # Поиск даты на странице
-    date_str = ""
-    month_names = r'(січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня)'
-    date_pattern = re.compile(r'(\d{1,2}\s+' + month_names + r')', re.I)
-    
-    for tag in soup.find_all(['h1', 'h2', 'h3', 'div', 'span', 'p']):
-        t = tag.get_text(strip=True)
-        m = date_pattern.search(t)
-        if m and len(t) < 30:
-            date_str = m.group(1)
-            break
-
     time_pattern = re.compile(r'(\d{2}:\d{2})\s*[\-–—]\s*(\d{2}:\d{2})')
 
     for element in soup.find_all(True):
@@ -61,9 +59,9 @@ def check_schedule():
                 result_lines.append(line)
 
     if result_lines:
+        date_str = get_current_date_ukr()
         message = "⚡ <b>ГРАФІК СВІТЛА (Черга 4.2)</b>"
-        if date_str:
-            message += f"\n📅 <b>Дата: {date_str}</b>"
+        message += f"\n📅 <b>Дата: {date_str}</b>"
         message += "\n\n" + "\n".join(result_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
         send_telegram(message)
