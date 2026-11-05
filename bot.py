@@ -22,33 +22,32 @@ def check_schedule():
     soup = BeautifulSoup(response.text, "html.parser")
     result_lines = []
     
+    # Ищем все элементы с временными интервалами
     time_pattern = re.compile(r'(\d{2}:\d{2})\s*[\-–—]\s*(\d{2}:\d{2})')
 
-    for element in soup.find_all(['div', 'li', 'span', 'p']):
+    # Ищем блоки, содержащие время
+    for element in soup.find_all(True):
         text = element.get_text(" ", strip=True)
         match = time_pattern.search(text)
         
-        if match and len(text) < 30:
+        if match and len(text) < 35:
             interval = f"{match.group(1)} - {match.group(2)}"
             
-            # Проверяем структуру контейнера строки графика
-            container = element.find_parent(['div', 'li', 'tr'])
-            container_html = str(container).lower() if container else str(element).lower()
+            # Проверяем класс родителя или самого элемента на наличие признаков отключения
+            classes = " ".join(element.get("class", []))
+            parent = element.find_parent()
+            parent_classes = " ".join(parent.get("class", [])) if parent else ""
+            combined_classes = (classes + " " + parent_classes).lower()
             
-            # Ищем маркеры света (зеленый цвет, класс on, success или наличие лампочки)
-            is_light = False
-            if any(k in container_html for k in ["on", "success", "green", "has-light", "active", "rgb(40", "#28"]):
-                is_light = True
-            elif any(k in container_html for k in ["off", "red", "danger", "no-light", "disable", "outage", "rgb(217", "#e"]):
-                is_light = False
-            else:
-                # Если явных классов нет, по умолчанию считаем по наличию текста отключения
-                if "вимк" in container_html or "нема" in container_html:
-                    is_light = False
-                else:
-                    is_light = True  # Если сомнения — считаем, что свет есть, пока не доказано обратное
+            # На таких сайтах выключенное состояние часто содержит классы вроде off, red, disable, inactive
+            is_off = any(c in combined_classes for c in ["off", "red", "danger", "disable", "outage", "no-light"])
+            
+            # Также проверяем текст внутри элемента или его ближайшего окружения
+            full_html = str(parent).lower() if parent else str(element).lower()
+            if "вимк" in full_html or "нема" in full_html or "class=\"off" in full_html:
+                is_off = True
 
-            status_text = "є світло" if is_light else "немає світла"
+            status_text = "немає світла" if is_off else "є світло"
             line = f"{interval} — {status_text}"
             
             if line not in result_lines and not any(interval in existing for existing in result_lines):
