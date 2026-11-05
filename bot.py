@@ -3,8 +3,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-TOKEN = os.getenv("BOT_TOKEN", "ВАШ_ТОКЕН_БОТА")
-CHAT_ID = os.getenv("CHAT_ID", "ВАШ_CHAT_ID")
+TOKEN = os.getenv("BOT_TOKEN", "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI")
+CHAT_ID = os.getenv("CHAT_ID", "8613036126")
 
 URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-4-2"
 
