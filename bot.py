@@ -8,7 +8,7 @@ TOKEN = os.getenv("BOT_TOKEN", "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI")
 
 # Указываем список ID получателей через запятую (в виде чисел или строк)
 # Например: ["123456789", "987654321", "112233445"]
-CHAT_IDS = ["8613036126", "1941981584"]
+CHAT_IDS = ["757987493", "1941981584"]
 
 URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-4-2"
 
