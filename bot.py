@@ -10,7 +10,7 @@ TOKEN = os.getenv("BOT_TOKEN", "9257801183:AAHfb3NeFt5hfIAnxjpj9S5gotrCyuq7tLI")
 # Например: ["123456789", "987654321", "112233445"]
 CHAT_IDS = ["757987493", "1941981584"]
 
-URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-4-2"
+URL = "https://bezsvitla.com.ua/chernihivska-oblast/cherha-3-2"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -62,8 +62,8 @@ def check_schedule():
 
     if result_lines:
         date_str = get_current_date_ukr()
-        message = "⚡ <b>ГРАФІК СВІТЛА (Черга 4.2)</b>"
-        message += f"\n📅 <b>Дата: {date_str}</b>"
+        message = "⚡ <b>ГРАФІК СВІТЛА (Черга 3.2)</b>"
+        message += f"\n <b>Дата: {date_str}</b>"
         message += "\n\n" + "\n".join(result_lines)
         message += f"\n\n🔗 <a href='{URL}'>Переглянути на сайті</a>"
         
